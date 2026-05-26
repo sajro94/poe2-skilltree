@@ -1,0 +1,8 @@
+node_modules
+dist
+*.local
+.DS_Store
+
+# Generated at dev/build time by scripts/prepare-data.sh
+public/data
+public/assets
