@@ -106,17 +106,23 @@ export default function App() {
     if (!tree || query.trim().length < 1)
       return { results: [] as TreeNode[], hits: new Set<string>() };
     const q = query.toLowerCase();
+    // With a class selected, match the class-specific override (the name/stats
+    // actually shown on the tree) so search stays consistent with the display.
+    const ov = selectedClass != null ? tree.classOverrides.get(selectedClass) ?? null : null;
     const out: TreeNode[] = [];
     for (const n of tree.nodeList) {
-      if (!n.name || n.name.startsWith("[DNT")) continue;
-      if (n.name.toLowerCase().includes(q) || n.stats.some((s) => s.toLowerCase().includes(q))) {
+      const o = ov?.get(n.key);
+      const name = o?.name ?? n.name;
+      const stats = o?.stats ?? n.stats;
+      if (!name || name.startsWith("[DNT")) continue;
+      if (name.toLowerCase().includes(q) || stats.some((s) => s.toLowerCase().includes(q))) {
         out.push(n);
         if (out.length >= 60) break;
       }
     }
     out.sort((a, b) => rank(b.kind) - rank(a.kind));
     return { results: out, hits: new Set(out.map((n) => n.key)) };
-  }, [tree, query]);
+  }, [tree, query, selectedClass]);
 
   // ---- navigation ----
   const goTo = useCallback((x: number, y: number, zoom?: number) => {
@@ -450,6 +456,7 @@ export default function App() {
                 diff={diff}
                 diffOn={diffOn}
                 onPick={pickSearch}
+                overrides={activeOverrides}
               />
               <BuildPanel
                 hasClass={selectedClass != null}
@@ -488,6 +495,7 @@ export default function App() {
             diff={diff}
             diffOn={diffOn}
             onPick={pickSearch}
+            overrides={activeOverrides}
           />
           <VersionPanel
             version={version}

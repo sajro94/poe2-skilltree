@@ -56,6 +56,35 @@ export function computeDiff(prev: ParsedTree, next: ParsedTree): VersionDiff {
     counts.removed++;
   }
 
+  // Per-class overrides: a shared node's displayed name/stats for a class come
+  // from skillOverrides, which the base comparison above can't see. Flag a node
+  // when its override changed between versions but the base node did not (e.g.
+  // the Witch "Spell and Minion Damage" start nodes went 8% → 10%).
+  const classIdx = new Set<number>([...prev.classOverrides.keys(), ...next.classOverrides.keys()]);
+  for (const ci of classIdx) {
+    const pm = prev.classOverrides.get(ci);
+    const nm = next.classOverrides.get(ci);
+    const keys = new Set<string>([...(pm ? pm.keys() : []), ...(nm ? nm.keys() : [])]);
+    for (const key of keys) {
+      if (byKey.has(key)) continue; // base change (or another class) already flagged it
+      const po = pm?.get(key);
+      const no = nm?.get(key);
+      const oName = po?.name ?? "";
+      const nName = no?.name ?? "";
+      const oStats = po?.stats ?? [];
+      const nStats = no?.stats ?? [];
+      const statsChanged = !sameStats(oStats, nStats);
+      if (!statsChanged && oName === nName) continue;
+      if (statsChanged) {
+        byKey.set(key, { status: "stats", oldName: oName, newName: nName, oldStats: oStats, newStats: nStats });
+        counts.stats++;
+      } else {
+        byKey.set(key, { status: "renamed", oldName: oName, newName: nName });
+        counts.renamed++;
+      }
+    }
+  }
+
   return { byKey, removed, counts };
 }
 

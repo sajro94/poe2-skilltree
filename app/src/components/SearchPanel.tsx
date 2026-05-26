@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
-import type { TreeNode, VersionDiff } from "../types";
+import type { TreeNode, VersionDiff, NodeOverride } from "../types";
 import { KIND_LABEL } from "../lib/text";
 import { DIFF_COLORS } from "../lib/diff";
 
@@ -12,6 +12,8 @@ interface Props {
   diff: VersionDiff | null;
   diffOn: boolean;
   onPick: (n: TreeNode) => void;
+  // class-specific overrides → show the name actually displayed on the tree
+  overrides?: Map<string, NodeOverride> | null;
 }
 
 const KIND_COLOR: Record<string, string> = {
@@ -22,7 +24,7 @@ const KIND_COLOR: Record<string, string> = {
   mastery: "#c8a35a",
 };
 
-function SearchPanel({ query, setQuery, results, total, diff, diffOn, onPick }: Props) {
+function SearchPanel({ query, setQuery, results, total, diff, diffOn, onPick, overrides }: Props) {
   return (
     <motion.div
       className="panel search"
@@ -50,10 +52,11 @@ function SearchPanel({ query, setQuery, results, total, diff, diffOn, onPick }: 
           {results.map((n) => {
             const d = diffOn ? diff?.byKey.get(n.key) : undefined;
             const dot = d ? DIFF_COLORS[d.status] : KIND_COLOR[n.kind] || "var(--ink-faint)";
+            const name = overrides?.get(n.key)?.name ?? n.name;
             return (
               <div className="search__row" key={n.key} onClick={() => onPick(n)}>
                 <span className="search__dot" style={{ background: dot, boxShadow: `0 0 6px ${dot}` }} />
-                <span className="search__row-name">{n.name}</span>
+                <span className="search__row-name">{name}</span>
                 <span className="search__row-kind">{KIND_LABEL[n.kind]}</span>
               </div>
             );
