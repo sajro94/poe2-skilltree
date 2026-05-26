@@ -117,7 +117,6 @@ export default function App() {
       if (!name || name.startsWith("[DNT")) continue;
       if (name.toLowerCase().includes(q) || stats.some((s) => s.toLowerCase().includes(q))) {
         out.push(n);
-        if (out.length >= 60) break;
       }
     }
     out.sort((a, b) => rank(b.kind) - rank(a.kind));

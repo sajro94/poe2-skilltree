@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
 import type { TreeNode, VersionDiff, NodeOverride } from "../types";
-import { KIND_LABEL } from "../lib/text";
+import { KIND_LABEL, cleanStat } from "../lib/text";
 import { DIFF_COLORS } from "../lib/diff";
 
 interface Props {
@@ -52,12 +52,24 @@ function SearchPanel({ query, setQuery, results, total, diff, diffOn, onPick, ov
           {results.map((n) => {
             const d = diffOn ? diff?.byKey.get(n.key) : undefined;
             const dot = d ? DIFF_COLORS[d.status] : KIND_COLOR[n.kind] || "var(--ink-faint)";
-            const name = overrides?.get(n.key)?.name ?? n.name;
+            const ov = overrides?.get(n.key);
+            const name = ov?.name ?? n.name;
+            const stats = ov?.stats ?? n.stats;
+            // Prefer the stat line that matched the query (so a description-only
+            // hit is self-explanatory), else fall back to the first stat.
+            const q = query.trim().toLowerCase();
+            const hit = stats.find((s) => s.toLowerCase().includes(q)) ?? stats[0];
+            const desc = hit ? cleanStat(hit).split("\n")[0] : "";
             return (
               <div className="search__row" key={n.key} onClick={() => onPick(n)}>
                 <span className="search__dot" style={{ background: dot, boxShadow: `0 0 6px ${dot}` }} />
-                <span className="search__row-name">{name}</span>
-                <span className="search__row-kind">{KIND_LABEL[n.kind]}</span>
+                <span className="search__row-body">
+                  <span className="search__row-head">
+                    <span className="search__row-name">{name}</span>
+                    <span className="search__row-kind">{KIND_LABEL[n.kind]}</span>
+                  </span>
+                  {desc && <span className="search__row-desc">{desc}</span>}
+                </span>
               </div>
             );
           })}
