@@ -199,15 +199,15 @@ export function renderTree(
     addSeg(p, fx, fy, tx, ty, e.arc, odx, ody);
   }
   ctx.lineCap = "round";
-  ctx.strokeStyle = "rgba(150,124,72,0.55)";
-  ctx.lineWidth = cssPx(1.4);
+  ctx.strokeStyle = "rgba(176,146,86,0.85)";
+  ctx.lineWidth = cssPx(1.6);
   for (const [al, path] of edgeBuckets) {
-    ctx.globalAlpha = al * 0.5;
+    ctx.globalAlpha = al;
     ctx.stroke(path);
   }
   ctx.globalAlpha = 1;
   if (hasAlloc) {
-    ctx.lineWidth = cssPx(3);
+    ctx.lineWidth = cssPx(3.5);
     ctx.strokeStyle = ALLOC_EDGE;
     ctx.stroke(allocPaths[0]);
     ctx.strokeStyle = SET_COLOR[1];
