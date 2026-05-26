@@ -1,4 +1,5 @@
 import { memo, useState } from "react";
+import { createPortal } from "react-dom";
 import MarkupText from "./MarkupText";
 
 interface NoteNode {
@@ -110,43 +111,48 @@ function NotesPanel({ nodes, notes, setNote }: Props) {
         </div>
       )}
 
-      {menu && (
-        <>
-          <div
-            className="note-menu__backdrop"
-            onClick={() => setMenu(null)}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setMenu(null);
-            }}
-          />
-          <div
-            className="note-menu"
-            style={{ left: Math.min(menu.x, window.innerWidth - 190), top: Math.min(menu.y, window.innerHeight - 200) }}
-          >
-            <div className="note-menu__label">Font</div>
-            <div className="note-menu__fonts">
-              {FONTS.map((f) => (
-                <button key={f.tag} style={f.style} onClick={() => apply(f.tag)}>
-                  {f.label}
-                </button>
-              ))}
+      {menu &&
+        createPortal(
+          <>
+            <div
+              className="note-menu__backdrop"
+              onClick={() => setMenu(null)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setMenu(null);
+              }}
+            />
+            <div
+              className="note-menu"
+              style={{
+                left: Math.min(menu.x, window.innerWidth - 190),
+                top: Math.min(menu.y, window.innerHeight - 200),
+              }}
+            >
+              <div className="note-menu__label">Font</div>
+              <div className="note-menu__fonts">
+                {FONTS.map((f) => (
+                  <button key={f.tag} style={f.style} onClick={() => apply(f.tag)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              <div className="note-menu__label">Colour</div>
+              <div className="note-menu__swatches">
+                {SWATCHES.map(([name, hex]) => (
+                  <button
+                    key={name}
+                    className="note-swatch"
+                    style={{ background: hex }}
+                    title={name}
+                    onClick={() => apply(name)}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="note-menu__label">Colour</div>
-            <div className="note-menu__swatches">
-              {SWATCHES.map(([name, hex]) => (
-                <button
-                  key={name}
-                  className="note-swatch"
-                  style={{ background: hex }}
-                  title={name}
-                  onClick={() => apply(name)}
-                />
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+          </>,
+          document.body
+        )}
     </div>
   );
 }
