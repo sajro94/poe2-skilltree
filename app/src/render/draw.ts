@@ -140,6 +140,26 @@ export function renderTree(
   const ax = (n: TreeNode) => (off && n.ascendancyId === selAsc ? n.x + off.dx : n.x);
   const ay = (n: TreeNode) => (off && n.ascendancyId === selAsc ? n.y + off.dy : n.y);
 
+  // ---- ascendancy backgrounds (themed art behind each wheel) -----------
+  // Drawn first so edges/nodes sit on top. Dimmed when not the focus so the
+  // shared tree stays readable; brighter for the selected class/ascendancy.
+  {
+    const bgHalf = 1600; // half the natural art size, for view culling
+    const bgAlpha = (ascId: string): number => {
+      if (selAsc) return ascId === selAsc ? 0.65 : 0;
+      if (ascPrefix) return ascId.startsWith(ascPrefix) ? 0.5 : 0.14;
+      return 0.3;
+    };
+    for (const bg of tree.ascBackgrounds) {
+      const a = bgAlpha(bg.ascId);
+      if (a < 0.02) continue;
+      const cx = off && bg.ascId === selAsc ? bg.cx + off.dx : bg.cx;
+      const cy = off && bg.ascId === selAsc ? bg.cy + off.dy : bg.cy;
+      if (cx < vx0 - bgHalf || cx > vx1 + bgHalf || cy < vy0 - bgHalf || cy > vy1 + bgHalf) continue;
+      set.backgrounds[bg.cls]?.drawCentered(ctx, bg.frame, cx, cy, undefined, a);
+    }
+  }
+
   // ---- connections: one Path2D per alpha bucket, stroked once ----------
   const hasAlloc = opts.allocated.size > 0;
   const hasPreview = opts.previewKeys.size > 0;

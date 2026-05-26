@@ -69,14 +69,32 @@ export interface AtlasSet {
   skillsDisabled: Atlas;
   frame: Atlas;
   mastery: Atlas;
+  // ascendancy background art, keyed by lowercase class name
+  backgrounds: Record<string, Atlas>;
 }
 
+// Classes that have ascendancies (each ships a background-<name> atlas whose
+// class<Name>:Class<i> frames are the per-ascendancy background art).
+const BG_CLASSES = [
+  "witch",
+  "ranger",
+  "warrior",
+  "sorceress",
+  "huntress",
+  "mercenary",
+  "monk",
+  "druid",
+];
+
 export async function loadAtlases(): Promise<AtlasSet> {
-  const [skills, skillsDisabled, frame, mastery] = await Promise.all([
+  const [skills, skillsDisabled, frame, mastery, ...bgs] = await Promise.all([
     new Atlas().load("skills"),
     new Atlas().load("skills-disabled"),
     new Atlas().load("frame"),
     new Atlas().load("mastery-effect-active"),
+    ...BG_CLASSES.map((c) => new Atlas().load(`background-${c}`)),
   ]);
-  return { skills, skillsDisabled, frame, mastery };
+  const backgrounds: Record<string, Atlas> = {};
+  BG_CLASSES.forEach((c, i) => (backgrounds[c] = bgs[i]));
+  return { skills, skillsDisabled, frame, mastery, backgrounds };
 }

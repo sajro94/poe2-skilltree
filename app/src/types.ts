@@ -135,6 +135,15 @@ export interface TreeEdge {
   asc?: string; // intra-ascendancy edge (for the centered-ascendancy offset)
 }
 
+// Themed art drawn behind an ascendancy's node cluster (one per ascendancy).
+export interface AscBackground {
+  ascId: string;
+  cls: string; // lowercase class name → key into AtlasSet.backgrounds
+  frame: string; // sprite-atlas frame key, e.g. "classWitch:Class0"
+  cx: number; // cluster bounding-box centre (world units)
+  cy: number;
+}
+
 export interface ParsedTree {
   version: string;
   nodes: Map<string, TreeNode>;
@@ -142,6 +151,8 @@ export interface ParsedTree {
   edges: TreeEdge[];
   classes: ClassInfo[];
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
+  // per-ascendancy background art (positioned over the node cluster)
+  ascBackgrounds: AscBackground[];
   // skillId of the start node for each class index
   classStart: Map<number, TreeNode>;
   // first start node per ascendancyId
