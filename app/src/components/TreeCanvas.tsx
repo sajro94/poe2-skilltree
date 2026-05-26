@@ -182,6 +182,24 @@ function TreeCanvas(props: Props) {
 
   const hoverKey = useRef<string | null>(null);
   const previewRef = useRef<{ keys: Set<string>; tag: Tag } | null>(null);
+  const tapSel = useRef<string | null>(null); // touch: node tapped once (tap again to allocate)
+  const downPos = useRef<{ x: number; y: number } | null>(null);
+
+  // Show a node's details + preview path (the touch equivalent of mouse hover).
+  const inspect = (hit: ReturnType<typeof pickNode>, clientX: number, clientY: number) => {
+    const p = optsRef.current;
+    hoverKey.current = hit ? hit.key : null;
+    const pv =
+      hit &&
+      previewAllocation(
+        p.tree,
+        { selectedClass: p.selectedClass, selectedAsc: p.selectedAsc, mode: p.mode, alloc: p.alloc, ascAlloc: p.ascAlloc },
+        hit
+      );
+    previewRef.current = pv ? { keys: new Set(pv.keys), tag: pv.tag } : null;
+    p.onHover(hit, clientX, clientY);
+    p.camera.dirty = true;
+  };
 
   // ---- input ----
   const onPointerDown = (e: React.PointerEvent) => {
@@ -194,6 +212,7 @@ function TreeCanvas(props: Props) {
     if (pointers.current.size === 1) {
       dragging.current = true;
       moved.current = false;
+      downPos.current = { x: e.clientX, y: e.clientY };
     } else if (pointers.current.size === 2) {
       const [a, b] = [...pointers.current.values()];
       pinchDist.current = Math.hypot(a.x - b.x, a.y - b.y);
@@ -221,13 +240,19 @@ function TreeCanvas(props: Props) {
     }
 
     if (dragging.current && prev) {
-      const dx = e.clientX - prev.x;
-      const dy = e.clientY - prev.y;
-      if (Math.abs(dx) + Math.abs(dy) > 2) moved.current = true;
-      cam.panByScreen(dx, dy);
-      previewRef.current = null;
-      hoverKey.current = null;
-      optsRef.current.onHover(null, 0, 0);
+      // Only start panning once the finger/mouse moves past a slop radius, so a
+      // tap (with normal finger jitter) isn't consumed as a drag.
+      if (!moved.current && downPos.current) {
+        const tot = Math.hypot(e.clientX - downPos.current.x, e.clientY - downPos.current.y);
+        if (tot > 10) moved.current = true;
+      }
+      if (moved.current) {
+        cam.panByScreen(e.clientX - prev.x, e.clientY - prev.y);
+        previewRef.current = null;
+        hoverKey.current = null;
+        tapSel.current = null;
+        optsRef.current.onHover(null, 0, 0);
+      }
       return;
     }
 
@@ -258,15 +283,31 @@ function TreeCanvas(props: Props) {
     if (pointers.current.size < 2) pinchDist.current = 0;
     if (pointers.current.size === 0) {
       if (dragging.current && !moved.current) {
-        // treat as click/pick
-        const cam = optsRef.current.camera;
+        const p = optsRef.current;
+        const cam = p.camera;
         const wx = cam.screenToWorldX(e.clientX);
         const wy = cam.screenToWorldY(e.clientY);
-        optsRef.current.onPick(
-          pickNode(optsRef.current.tree, wx, wy, optsRef.current.selectedAsc, optsRef.current.ascOffset)
-        );
+        const hit = pickNode(p.tree, wx, wy, p.selectedAsc, p.ascOffset);
+        if (e.pointerType === "mouse") {
+          // mouse: hover already shows details, so a click allocates directly
+          p.onPick(hit);
+        } else if (!hit) {
+          // touch on empty space: dismiss the inspector
+          tapSel.current = null;
+          inspect(null, 0, 0);
+        } else if (tapSel.current === hit.key) {
+          // touch: second tap on the same node confirms allocation
+          p.onPick(hit);
+          tapSel.current = null;
+          inspect(hit, e.clientX, e.clientY); // refresh details for the new state
+        } else {
+          // touch: first tap shows details + preview path (no allocation yet)
+          tapSel.current = hit.key;
+          inspect(hit, e.clientX, e.clientY);
+        }
       }
       dragging.current = false;
+      moved.current = false;
     }
   };
 
