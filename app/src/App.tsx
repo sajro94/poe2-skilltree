@@ -127,10 +127,8 @@ export default function App() {
       dispatch({ type: "selectAsc", id });
       const t = trees.current?.[version];
       if (id && t) {
-        // ascendancy is drawn at the centre of the tree, so focus there
-        const cx = (t.bounds.minX + t.bounds.maxX) / 2;
-        const cy = (t.bounds.minY + t.bounds.maxY) / 2;
-        goTo(cx, cy, 0.34);
+        const start = t.ascStart.get(id);
+        if (start) goTo(start.x, start.y, 0.4);
       }
     },
     [version, goTo]
@@ -216,27 +214,8 @@ export default function App() {
     return m;
   }, [alloc]);
 
-  const ascOffset = useMemo(() => {
-    if (!tree || !selectedAsc) return null;
-    // centre the ascendancy's bounding box in the empty middle of the tree
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    let n = 0;
-    for (const nd of tree.nodeList) {
-      if (nd.ascendancyId !== selectedAsc) continue;
-      if (nd.x < minX) minX = nd.x;
-      if (nd.x > maxX) maxX = nd.x;
-      if (nd.y < minY) minY = nd.y;
-      if (nd.y > maxY) maxY = nd.y;
-      n++;
-    }
-    if (!n) return null;
-    const cx = (tree.bounds.minX + tree.bounds.maxX) / 2;
-    const cy = (tree.bounds.minY + tree.bounds.maxY) / 2;
-    return { dx: cx - (minX + maxX) / 2, dy: cy - (minY + maxY) / 2 };
-  }, [tree, selectedAsc]);
+  // Ascendancies render in place at the tree's edge (no centre relocation).
+  const ascOffset = null;
 
   const bonus = useMemo(() => {
     if (!tree) return 0;
