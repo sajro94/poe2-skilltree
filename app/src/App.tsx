@@ -374,7 +374,7 @@ export default function App() {
       <div className="app">
         <div className="loader">
           <div className="loader__ring" />
-          <div className="loader__brand">Atlas of Souls</div>
+          <div className="loader__brand">Passive Skill Tree</div>
           <div className="loader__label">
             {progress >= 1 ? "Awakening the tree…" : "Drawing the passive tree"}
           </div>
