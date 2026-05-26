@@ -990,9 +990,29 @@ body {
 }
 .inv-slot {
   display: grid;
-  grid-template-columns: 120px 1fr 130px;
+  grid-template-columns: 116px 1fr 120px 56px;
   align-items: center;
   gap: 8px;
+}
+.lvl-field {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+  padding: 6px 4px;
+}
+.skill-card__head .lvl-field,
+.skill-support .lvl-field {
+  width: 52px;
+  flex: none;
+}
+.lvl-field:focus {
+  outline: none;
+  border-color: var(--gold);
 }
 .inv-slot__label {
   font-family: var(--font-body);

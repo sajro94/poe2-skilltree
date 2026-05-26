@@ -4,19 +4,56 @@ import { reach } from "./allocation";
 import type { ParsedTree } from "../types";
 import type { Tag } from "./buildState";
 
+export type LevelInterval = number | number[]; // e.g. 12 or [0, 100]
+
 export interface BuildInventorySlot {
   inventory_id: string;
   unique?: string;
   hint?: string;
+  level_interval?: LevelInterval;
 }
 
+// Internal (planner) skill/support shape — supports are always objects here;
+// export simplifies a support with no level to a bare id string.
+export interface BuildSupport {
+  id: string;
+  level_interval?: LevelInterval;
+}
 export interface BuildSkill {
   id: string;
-  supports?: string[];
+  level_interval?: LevelInterval;
+  supports?: BuildSupport[];
   additional_text?: string;
 }
 
+/** parse a "12" / "0-100" level field into the .build value */
+export function parseLevel(s: string): LevelInterval | undefined {
+  const t = s.trim();
+  if (!t) return undefined;
+  if (t.includes("-")) {
+    const [a, b] = t.split("-").map((x) => parseInt(x.trim(), 10));
+    if (!isNaN(a) && !isNaN(b)) return [a, b];
+  }
+  const n = parseInt(t, 10);
+  return isNaN(n) ? undefined : n;
+}
+
+/** format a level_interval for an input field */
+export function fmtLevel(li?: LevelInterval): string {
+  if (li == null) return "";
+  return Array.isArray(li) ? li.join("-") : String(li);
+}
+
 export type BuildPassiveEntry = string | { id: string; weapon_set?: number; additional_text?: string };
+
+// File shapes (supports may be bare ids or objects in a real .build).
+type RawSupport = string | { id: string; level_interval?: LevelInterval };
+interface RawSkill {
+  id: string;
+  level_interval?: LevelInterval;
+  supports?: RawSupport[];
+  additional_text?: string;
+}
 
 export interface BuildBody {
   name: string;
@@ -24,7 +61,7 @@ export interface BuildBody {
   description?: string;
   ascendancy?: string;
   passives?: BuildPassiveEntry[];
-  skills?: BuildSkill[];
+  skills?: RawSkill[];
   inventory_slots?: BuildInventorySlot[];
 }
 
@@ -93,17 +130,22 @@ export function exportBuild(
   if (doc.description.trim()) body.description = doc.description.trim();
   if (selectedAsc) body.ascendancy = selectedAsc;
   if (passives.length) body.passives = passives;
-  const skills: BuildSkill[] = doc.skills
+
+  const skills: RawSkill[] = doc.skills
     .filter((s) => s.id.trim())
     .map((s) => {
-      const supports = (s.supports ?? []).map((x) => x.trim()).filter(Boolean);
-      const out: BuildSkill = { id: s.id.trim() };
-      if (supports.length) out.supports = supports;
+      const out: RawSkill = { id: s.id.trim() };
+      if (s.level_interval != null) out.level_interval = s.level_interval;
+      const sup = (s.supports ?? [])
+        .filter((x) => x.id.trim())
+        .map((x) => (x.level_interval != null ? { id: x.id.trim(), level_interval: x.level_interval } : x.id.trim()));
+      if (sup.length) out.supports = sup;
       if (s.additional_text?.trim()) out.additional_text = s.additional_text.trim();
       return out;
     });
   if (skills.length) body.skills = skills;
-  const inv = doc.inventory.filter((s) => s.unique?.trim() || s.hint?.trim());
+
+  const inv = doc.inventory.filter((s) => s.unique?.trim() || s.hint?.trim() || s.level_interval != null);
   if (inv.length) body.inventory_slots = inv;
 
   return { Build: body };
@@ -146,7 +188,14 @@ export function parseBuildFile(text: string, tree: ParsedTree): ParsedBuild {
     author: body.author ?? "",
     description: body.description ?? "",
     inventory: Array.isArray(body.inventory_slots) ? body.inventory_slots : [],
-    skills: Array.isArray(body.skills) ? body.skills : [],
+    skills: (Array.isArray(body.skills) ? body.skills : []).map((s) => ({
+      id: s.id,
+      level_interval: s.level_interval,
+      supports: (s.supports ?? []).map((x) =>
+        typeof x === "string" ? { id: x } : { id: x.id, level_interval: x.level_interval }
+      ),
+      additional_text: s.additional_text,
+    })),
     notes,
   };
 

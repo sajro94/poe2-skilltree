@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { BuildInventorySlot } from "../../lib/buildFile";
+import { parseLevel, fmtLevel, type BuildInventorySlot } from "../../lib/buildFile";
 import { usePoeDb } from "../../lib/poedb";
 
 interface Props {
@@ -34,10 +34,10 @@ function InventoryStep({ inventory, setInventory, selectedAsc }: Props) {
   const byId: Record<string, BuildInventorySlot> = {};
   for (const s of inventory) byId[s.inventory_id] = s;
 
-  const update = (id: string, field: "unique" | "hint", val: string) => {
-    const merged: BuildInventorySlot = { ...(byId[id] ?? { inventory_id: id }), [field]: val };
+  const update = (id: string, p: Partial<BuildInventorySlot>) => {
+    const merged: BuildInventorySlot = { ...(byId[id] ?? { inventory_id: id }), ...p };
     const next = inventory.filter((s) => s.inventory_id !== id);
-    if (merged.unique?.trim() || merged.hint?.trim()) next.push(merged);
+    if (merged.unique?.trim() || merged.hint?.trim() || merged.level_interval != null) next.push(merged);
     setInventory(next);
   };
 
@@ -59,13 +59,20 @@ function InventoryStep({ inventory, setInventory, selectedAsc }: Props) {
               list="poedb-uniques"
               placeholder="unique item…"
               value={byId[slot.id]?.unique ?? ""}
-              onChange={(e) => update(slot.id, "unique", e.target.value)}
+              onChange={(e) => update(slot.id, { unique: e.target.value })}
             />
             <input
               className="inv-slot__field hint"
               placeholder="hint (optional)"
               value={byId[slot.id]?.hint ?? ""}
-              onChange={(e) => update(slot.id, "hint", e.target.value)}
+              onChange={(e) => update(slot.id, { hint: e.target.value })}
+            />
+            <input
+              className="lvl-field"
+              placeholder="Lv"
+              title="Level range, e.g. 1 or 0-100"
+              value={fmtLevel(byId[slot.id]?.level_interval)}
+              onChange={(e) => update(slot.id, { level_interval: parseLevel(e.target.value) })}
             />
           </div>
         ))}

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { BuildSkill } from "../../lib/buildFile";
+import { parseLevel, fmtLevel, type BuildSkill } from "../../lib/buildFile";
 import { usePoeDb } from "../../lib/poedb";
 
 interface Props {
@@ -16,9 +16,9 @@ function SkillsStep({ skills, setSkills }: Props) {
 
   const addSkill = () => setSkills([...skills, { id: "", supports: [] }]);
   const removeSkill = (i: number) => setSkills(skills.filter((_, idx) => idx !== i));
-  const addSupport = (i: number) => patch(i, (s) => ({ ...s, supports: [...(s.supports ?? []), ""] }));
-  const setSupport = (i: number, j: number, v: string) =>
-    patch(i, (s) => ({ ...s, supports: (s.supports ?? []).map((x, k) => (k === j ? v : x)) }));
+  const addSupport = (i: number) => patch(i, (s) => ({ ...s, supports: [...(s.supports ?? []), { id: "" }] }));
+  const setSupport = (i: number, j: number, fn: (x: { id: string; level_interval?: number | number[] }) => typeof x) =>
+    patch(i, (s) => ({ ...s, supports: (s.supports ?? []).map((x, k) => (k === j ? fn(x) : x)) }));
   const removeSupport = (i: number, j: number) =>
     patch(i, (s) => ({ ...s, supports: (s.supports ?? []).filter((_, k) => k !== j) }));
 
@@ -47,6 +47,13 @@ function SkillsStep({ skills, setSkills }: Props) {
                 value={s.id}
                 onChange={(e) => patch(i, (x) => ({ ...x, id: e.target.value }))}
               />
+              <input
+                className="lvl-field"
+                placeholder="Lv"
+                title="Level range, e.g. 1 or 0-20"
+                value={fmtLevel(s.level_interval)}
+                onChange={(e) => patch(i, (x) => ({ ...x, level_interval: parseLevel(e.target.value) }))}
+              />
               <button className="skill-card__rm" onClick={() => removeSkill(i)} title="Remove skill">
                 ✕
               </button>
@@ -57,8 +64,14 @@ function SkillsStep({ skills, setSkills }: Props) {
                   <input
                     list="poedb-supports"
                     placeholder="support gem…"
-                    value={sup}
-                    onChange={(e) => setSupport(i, j, e.target.value)}
+                    value={sup.id}
+                    onChange={(e) => setSupport(i, j, (x) => ({ ...x, id: e.target.value }))}
+                  />
+                  <input
+                    className="lvl-field"
+                    placeholder="Lv"
+                    value={fmtLevel(sup.level_interval)}
+                    onChange={(e) => setSupport(i, j, (x) => ({ ...x, level_interval: parseLevel(e.target.value) }))}
                   />
                   <button onClick={() => removeSupport(i, j)} title="Remove support">
                     –
