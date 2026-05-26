@@ -30,8 +30,9 @@
   --font-body: "Spectral", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --shadow-panel: 0 24px 70px -28px rgba(0, 0, 0, 0.9),
-    0 0 0 1px var(--line), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-panel:
+    0 24px 70px -28px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--line),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 * {
@@ -65,8 +66,16 @@ body {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(120% 90% at 50% 8%, rgba(56, 44, 78, 0.18), transparent 60%),
-    radial-gradient(90% 80% at 50% 100%, rgba(120, 80, 30, 0.1), transparent 55%),
+    radial-gradient(
+      120% 90% at 50% 8%,
+      rgba(56, 44, 78, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      90% 80% at 50% 100%,
+      rgba(120, 80, 30, 0.1),
+      transparent 55%
+    ),
     var(--void);
 }
 
@@ -77,7 +86,11 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 40;
-  background: radial-gradient(130% 120% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  background: radial-gradient(
+    130% 120% at 50% 50%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
   mix-blend-mode: multiply;
 }
 
@@ -293,7 +306,9 @@ body {
   border-radius: 3px;
   cursor: pointer;
   border-left: 2px solid transparent;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 .search__row:hover {
   background: rgba(200, 163, 90, 0.08);
@@ -845,7 +860,10 @@ body {
   padding: 8px 6px;
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
 }
 .ca-btn:hover {
   border-color: var(--gold);
@@ -1068,9 +1086,14 @@ body {
 }
 .mk-editor {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 .mk-editor .note-item__input {
   margin-top: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
 }
 .skill-support {
   flex-wrap: wrap;
@@ -1081,8 +1104,13 @@ body {
 .inv-slot-block + .inv-slot-block {
   margin-top: 9px;
 }
+.inv-slot-block {
+  min-width: 0;
+  overflow: hidden;
+}
 .inv-slot-block .mk-editor {
   margin-left: 116px;
+  width: calc(100% - 116px);
 }
 .lvl-field:focus {
   outline: none;
@@ -1384,7 +1412,9 @@ textarea.note-item__input {
 .search,
 .version,
 .classes {
-  transition: transform 0.28s ease, opacity 0.28s ease;
+  transition:
+    transform 0.28s ease,
+    opacity 0.28s ease;
 }
 
 /* ---- Responsive: 14" / tablets — stack points bar over search+version --- */
@@ -1453,6 +1483,167 @@ textarea.note-item__input {
   .app.show-right .version {
     display: block;
   }
+}
+
+/* ---- PoB Import Modal ---------------------------------------------------- */
+
+.pob-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.pob-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 81;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+}
+
+.pob-modal {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  pointer-events: auto;
+  padding: 22px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pob-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.pob-modal__title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+}
+
+.pob-modal__close {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink-dim);
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 11px;
+  display: grid;
+  place-content: center;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.pob-modal__close:hover {
+  border-color: var(--removed);
+  color: var(--removed);
+}
+
+.pob-modal__section-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.pob-modal__textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pob-modal__textarea:focus {
+  border-color: var(--gold);
+}
+.pob-modal__textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+.pob-modal__error {
+  background: rgba(239, 93, 93, 0.1);
+  border: 1px solid rgba(239, 93, 93, 0.4);
+  border-radius: 3px;
+  color: var(--removed);
+  font-size: 12px;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+.pob-modal__warnings {
+  background: rgba(245, 183, 64, 0.07);
+  border: 1px solid rgba(245, 183, 64, 0.25);
+  border-radius: 3px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pob-modal__warn-line {
+  font-size: 11px;
+  color: var(--changed);
+  line-height: 1.5;
+}
+
+.pob-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pob-modal__actions .ca-btn {
+  flex: none;
+}
+.pob-modal__actions .ca-btn.primary {
+  padding: 9px 18px;
+}
+
+.pob-modal__divider {
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+}
+
+.pob-modal__hint {
+  font-size: 11px;
+  color: var(--ink-faint);
+  line-height: 1.6;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 10px;
+}
+.pob-modal__hint code {
+  font-family: var(--font-mono);
+  color: var(--gold);
+  background: rgba(200, 163, 90, 0.08);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.pob-modal__hint em {
+  color: var(--ink-dim);
+  font-style: normal;
 }
 
 /* ---- Scrollbar ---------------------------------------------------------- */

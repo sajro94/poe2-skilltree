@@ -26,6 +26,9 @@ import {
   type BuildInventorySlot,
   type BuildSkill,
 } from "./lib/buildFile";
+import { importPobString } from "./lib/pobImport";
+import { isPobExport } from "./lib/pobDecode";
+import PobImportModal from "./components/PobImportModal";
 
 type Version = "0.5" | "0.4";
 const WIZARD_STEPS = ["Details", "Passives", "Skills", "Inventory"];
@@ -33,7 +36,6 @@ const WIZARD_STEPS = ["Details", "Passives", "Skills", "Inventory"];
 export default function App() {
   const cameraRef = useRef(new Camera());
   const hoverRef = useRef<HoverHandle>(null);
-  const importRef = useRef<HTMLInputElement>(null);
   const trees = useRef<Record<Version, ParsedTree> | null>(null);
   const prog = useRef<Record<string, { l: number; t: number }>>({});
   const nonce = useRef(0);
@@ -57,6 +59,9 @@ export default function App() {
   // purely CSS-media-driven (no reliance on JS innerWidth).
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(false);
+
+  // PoB import modal
+  const [pobModalOpen, setPobModalOpen] = useState(false);
 
   // planner mode (build wizard)
   const [planner, setPlanner] = useState(false);
@@ -234,7 +239,7 @@ export default function App() {
     setPlanner(true);
   }, []);
 
-  const triggerImport = useCallback(() => importRef.current?.click(), []);
+  const triggerImport = useCallback(() => setPobModalOpen(true), []);
 
   // Entering the Passives step: focus the class start so allocation can begin.
   const goToStep = useCallback(
@@ -266,30 +271,62 @@ export default function App() {
     downloadBuild(exportBuild(t, alloc, ascAlloc, selectedAsc, doc));
   }, [version, alloc, ascAlloc, selectedAsc, doc]);
 
+  const applyParsedBuild = useCallback(
+    (parsed: { selectedClass: number | null; selectedAsc: string | null; alloc: Map<string, import("./lib/buildState").Tag>; ascAlloc: Set<string>; doc: PlannerDoc }, t: import("./types").ParsedTree) => {
+      dispatch({
+        type: "load",
+        selectedClass: parsed.selectedClass,
+        selectedAsc: parsed.selectedAsc,
+        alloc: parsed.alloc,
+        ascAlloc: parsed.ascAlloc,
+      });
+      setDoc(parsed.doc);
+      const start = parsed.selectedClass != null ? t.classStart.get(parsed.selectedClass) : null;
+      if (start) goTo(start.x, start.y, 0.3);
+      else resetView();
+    },
+    [goTo, resetView]
+  );
+
   const onImport = useCallback(
     async (file: File) => {
       const t = trees.current?.[version];
       if (!t) return;
+      const text = await file.text();
       try {
-        const parsed = parseBuildFile(await file.text(), t);
-        dispatch({
-          type: "load",
-          selectedClass: parsed.selectedClass,
-          selectedAsc: parsed.selectedAsc,
-          alloc: parsed.alloc,
-          ascAlloc: parsed.ascAlloc,
-        });
-        setDoc(parsed.doc);
-        // Stay in the explorer to view the imported build; the "Edit" button
-        // (in the class panel) enters the planner to modify it.
-        const start = parsed.selectedClass != null ? t.classStart.get(parsed.selectedClass) : null;
-        if (start) goTo(start.x, start.y, 0.3);
-        else resetView();
+        // Auto-detect: try PoB string first, fall back to .build JSON
+        if (isPobExport(text.trim())) {
+          const result = await importPobString(text.trim(), t);
+          applyParsedBuild(result, t);
+          if (result.warnings.length > 0) {
+            console.warn("[PoB import]", result.warnings.join("\n"));
+          }
+        } else {
+          const parsed = parseBuildFile(text, t);
+          applyParsedBuild(parsed, t);
+        }
       } catch (e) {
-        alert("Could not read that .build file: " + (e as Error).message);
+        alert("Could not read that file: " + (e as Error).message);
       }
     },
-    [version, goTo, resetView]
+    [version, applyParsedBuild]
+  );
+
+  const onPobString = useCallback(
+    async (s: string) => {
+      const t = trees.current?.[version];
+      if (!t) throw new Error("Tree not loaded yet");
+      const result = await importPobString(s, t);
+      applyParsedBuild(result, t);
+      setPobModalOpen(false);
+      // Surface warnings non-blocking after modal closes
+      if (result.warnings.length > 0) {
+        setTimeout(() => {
+          console.warn("[PoB import warnings]\n" + result.warnings.join("\n"));
+        }, 0);
+      }
+    },
+    [version, applyParsedBuild]
   );
 
   // ---- derived ----
@@ -531,17 +568,6 @@ export default function App() {
             onEdit={editBuild}
             canEdit={selectedClass != null || alloc.size > 0}
           />
-          <input
-            ref={importRef}
-            type="file"
-            accept=".build,application/json"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onImport(f);
-              e.target.value = "";
-            }}
-          />
           <button
             className="edge-toggle left"
             onClick={() => setShowLeft((v) => !v)}
@@ -560,6 +586,13 @@ export default function App() {
       )}
 
       <Controls camera={cameraRef.current} onReset={resetView} />
+
+      <PobImportModal
+        open={pobModalOpen}
+        onClose={() => setPobModalOpen(false)}
+        onPobString={onPobString}
+        onFile={onImport}
+      />
 
       <HoverLayer
         ref={hoverRef}
