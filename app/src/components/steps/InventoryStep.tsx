@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { levelParts, makeLevel, type BuildInventorySlot } from "../../lib/buildFile";
 import { usePoeDb } from "../../lib/poedb";
+import MarkupEditor from "../MarkupEditor";
 
 interface Props {
   inventory: BuildInventorySlot[];
@@ -51,42 +52,50 @@ function InventoryStep({ inventory, setInventory, selectedAsc }: Props) {
       </datalist>
 
       <div className="inv-grid">
-        {slots.map((slot) => (
-          <div className="inv-slot" key={slot.id}>
-            <span className="inv-slot__label">{slot.label}</span>
-            <input
-              className="inv-slot__field"
-              list="poedb-uniques"
-              placeholder="unique item…"
-              value={byId[slot.id]?.unique ?? ""}
-              onChange={(e) => update(slot.id, { unique: e.target.value })}
-            />
-            <input
-              className="inv-slot__field hint"
-              placeholder="hint (optional)"
-              value={byId[slot.id]?.hint ?? ""}
-              onChange={(e) => update(slot.id, { hint: e.target.value })}
-            />
-            <input
-              className="lvl-field"
-              placeholder="lvl"
-              title="Start level (optional)"
-              value={levelParts(byId[slot.id]?.level_interval)[0]}
-              onChange={(e) =>
-                update(slot.id, { level_interval: makeLevel(e.target.value, levelParts(byId[slot.id]?.level_interval)[1]) })
-              }
-            />
-            <input
-              className="lvl-field"
-              placeholder="to"
-              title="End level (optional)"
-              value={levelParts(byId[slot.id]?.level_interval)[1]}
-              onChange={(e) =>
-                update(slot.id, { level_interval: makeLevel(levelParts(byId[slot.id]?.level_interval)[0], e.target.value) })
-              }
-            />
-          </div>
-        ))}
+        {slots.map((slot) => {
+          const s = byId[slot.id];
+          const hasContent = !!(s?.unique?.trim() || s?.hint?.trim());
+          return (
+            <div className="inv-slot-block" key={slot.id}>
+              <div className="inv-slot">
+                <span className="inv-slot__label">{slot.label}</span>
+                <input
+                  className="inv-slot__field"
+                  list="poedb-uniques"
+                  placeholder="unique item…"
+                  value={s?.unique ?? ""}
+                  onChange={(e) => update(slot.id, { unique: e.target.value })}
+                />
+                <input
+                  className="lvl-field"
+                  placeholder="lvl"
+                  title="Start level (optional)"
+                  value={levelParts(s?.level_interval)[0]}
+                  onChange={(e) =>
+                    update(slot.id, { level_interval: makeLevel(e.target.value, levelParts(s?.level_interval)[1]) })
+                  }
+                />
+                <input
+                  className="lvl-field"
+                  placeholder="to"
+                  title="End level (optional)"
+                  value={levelParts(s?.level_interval)[1]}
+                  onChange={(e) =>
+                    update(slot.id, { level_interval: makeLevel(levelParts(s?.level_interval)[0], e.target.value) })
+                  }
+                />
+              </div>
+              {hasContent && (
+                <MarkupEditor
+                  value={s?.hint ?? ""}
+                  onChange={(v) => update(slot.id, { hint: v })}
+                  placeholder="hint (optional) — right-click to format"
+                  rows={1}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {db.uniques.length === 0 && (

@@ -18,6 +18,7 @@ export interface BuildInventorySlot {
 export interface BuildSupport {
   id: string;
   level_interval?: LevelInterval;
+  additional_text?: string;
 }
 export interface BuildSkill {
   id: string;
@@ -48,7 +49,7 @@ export function makeLevel(startStr: string, endStr: string): LevelInterval | und
 export type BuildPassiveEntry = string | { id: string; weapon_set?: number; additional_text?: string };
 
 // File shapes (supports may be bare ids or objects in a real .build).
-type RawSupport = string | { id: string; level_interval?: LevelInterval };
+type RawSupport = string | { id: string; level_interval?: LevelInterval; additional_text?: string };
 interface RawSkill {
   id: string;
   level_interval?: LevelInterval;
@@ -137,9 +138,14 @@ export function exportBuild(
     .map((s) => {
       const out: RawSkill = { id: s.id.trim() };
       if (s.level_interval != null) out.level_interval = s.level_interval;
-      const sup = (s.supports ?? [])
+      const sup: RawSupport[] = (s.supports ?? [])
         .filter((x) => x.id.trim())
-        .map((x) => (x.level_interval != null ? { id: x.id.trim(), level_interval: x.level_interval } : x.id.trim()));
+        .map((x) => {
+          const o: { id: string; level_interval?: LevelInterval; additional_text?: string } = { id: x.id.trim() };
+          if (x.level_interval != null) o.level_interval = x.level_interval;
+          if (x.additional_text?.trim()) o.additional_text = x.additional_text.trim();
+          return o.level_interval != null || o.additional_text ? o : o.id;
+        });
       if (sup.length) out.supports = sup;
       if (s.additional_text?.trim()) out.additional_text = s.additional_text.trim();
       return out;
@@ -193,7 +199,9 @@ export function parseBuildFile(text: string, tree: ParsedTree): ParsedBuild {
       id: s.id,
       level_interval: s.level_interval,
       supports: (s.supports ?? []).map((x) =>
-        typeof x === "string" ? { id: x } : { id: x.id, level_interval: x.level_interval }
+        typeof x === "string"
+          ? { id: x }
+          : { id: x.id, level_interval: x.level_interval, additional_text: x.additional_text }
       ),
       additional_text: s.additional_text,
     })),

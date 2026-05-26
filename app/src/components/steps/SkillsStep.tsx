@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { levelParts, makeLevel, type BuildSkill } from "../../lib/buildFile";
 import { usePoeDb } from "../../lib/poedb";
+import MarkupEditor from "../MarkupEditor";
 
 interface Props {
   skills: BuildSkill[];
@@ -99,12 +100,24 @@ function SkillsStep({ skills, setSkills }: Props) {
                   <button onClick={() => removeSupport(i, j)} title="Remove support">
                     –
                   </button>
+                  <MarkupEditor
+                    value={sup.additional_text ?? ""}
+                    onChange={(v) => setSupport(i, j, (x) => ({ ...x, additional_text: v }))}
+                    placeholder="support note (optional)"
+                    rows={1}
+                  />
                 </div>
               ))}
               <button className="skill-support__add" onClick={() => addSupport(i)}>
                 + support
               </button>
             </div>
+            <MarkupEditor
+              value={s.additional_text ?? ""}
+              onChange={(v) => patch(i, (x) => ({ ...x, additional_text: v }))}
+              placeholder="skill note (additional text) — right-click to format"
+              rows={1}
+            />
           </div>
         ))}
       </div>

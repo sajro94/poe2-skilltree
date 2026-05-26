@@ -1000,7 +1000,7 @@ body {
 }
 .inv-slot {
   display: grid;
-  grid-template-columns: 108px 1fr 92px 40px 40px;
+  grid-template-columns: 108px 1fr 40px 40px;
   align-items: center;
   gap: 7px;
 }
@@ -1024,6 +1024,24 @@ body {
 .skill-card__gem,
 .skill-support input {
   min-width: 0;
+}
+.mk-editor {
+  width: 100%;
+}
+.mk-editor .note-item__input {
+  margin-top: 6px;
+}
+.skill-support {
+  flex-wrap: wrap;
+}
+.skill-support .mk-editor {
+  flex-basis: 100%;
+}
+.inv-slot-block + .inv-slot-block {
+  margin-top: 9px;
+}
+.inv-slot-block .mk-editor {
+  margin-left: 116px;
 }
 .lvl-field:focus {
   outline: none;
