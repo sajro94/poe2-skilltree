@@ -105,10 +105,17 @@ export async function loadTree(version: string, onProgress?: ProgressFn): Promis
     seen.add(sig);
 
     const edge: TreeEdge = { fromKey, toKey, fx: a.x, fy: a.y, tx: b.x, ty: b.y };
-    // Hide ascendancy-start spokes and any edge crossing between an ascendancy
-    // and the rest of the tree (e.g. Pathfinder's "Path of the X" connectors).
-    // Kept in adjacency for pathing; just not drawn.
-    if (a.kind === "ascStart" || b.kind === "ascStart" || a.ascendancyId !== b.ascendancyId)
+    // Hide ascendancy-start spokes, edges crossing between an ascendancy and
+    // the rest of the tree (e.g. Pathfinder's "Path of the X" connectors), and
+    // edges to mastery nodes (which are not rendered). Kept in adjacency for
+    // pathing; just not drawn.
+    if (
+      a.kind === "ascStart" ||
+      b.kind === "ascStart" ||
+      a.kind === "mastery" ||
+      b.kind === "mastery" ||
+      a.ascendancyId !== b.ascendancyId
+    )
       edge.hidden = true;
     // tag intra-ascendancy edges so they can be offset to centre when selected
     if (a.ascendancyId && a.ascendancyId === b.ascendancyId) edge.asc = a.ascendancyId;

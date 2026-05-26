@@ -407,7 +407,11 @@ export default function App() {
           )}
           {step === 2 && <SkillsStep skills={doc.skills} setSkills={setSkills} version={version} />}
           {step === 3 && (
-            <InventoryStep inventory={doc.inventory} setInventory={setInventory} version={version} />
+            <InventoryStep
+              inventory={doc.inventory}
+              setInventory={setInventory}
+              selectedAsc={selectedAsc}
+            />
           )}
         </>
       ) : (

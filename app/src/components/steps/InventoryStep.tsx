@@ -5,11 +5,11 @@ import { usePoeDb } from "../../lib/poedb";
 interface Props {
   inventory: BuildInventorySlot[];
   setInventory: (inv: BuildInventorySlot[]) => void;
-  version: string;
+  selectedAsc: string | null;
 }
 
 // inventory_id values per the .build format (best-effort PoE2 slot ids).
-const SLOTS: { id: string; label: string }[] = [
+const BASE_SLOTS: { id: string; label: string }[] = [
   { id: "Weapon1", label: "Weapon — Set I" },
   { id: "Weapon2", label: "Off-hand — Set I" },
   { id: "Weapon1Swap", label: "Weapon — Set II" },
@@ -24,8 +24,13 @@ const SLOTS: { id: string; label: string }[] = [
   { id: "Belt", label: "Belt" },
 ];
 
-function InventoryStep({ inventory, setInventory }: Props) {
+function InventoryStep({ inventory, setInventory, selectedAsc }: Props) {
   const db = usePoeDb();
+  // Ritualist (Huntress3) can equip a third ring.
+  const slots =
+    selectedAsc === "Huntress3"
+      ? [...BASE_SLOTS.slice(0, 11), { id: "Ring3", label: "Ring 3" }, ...BASE_SLOTS.slice(11)]
+      : BASE_SLOTS;
   const byId: Record<string, BuildInventorySlot> = {};
   for (const s of inventory) byId[s.inventory_id] = s;
 
@@ -46,7 +51,7 @@ function InventoryStep({ inventory, setInventory }: Props) {
       </datalist>
 
       <div className="inv-grid">
-        {SLOTS.map((slot) => (
+        {slots.map((slot) => (
           <div className="inv-slot" key={slot.id}>
             <span className="inv-slot__label">{slot.label}</span>
             <input
